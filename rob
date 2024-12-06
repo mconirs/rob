@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual</title>
+    <script src="https://unpkg.com/@splinetool/viewer@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+        }
+
+        #chat-window {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        #chat-input {
+            width: calc(100% - 70px);
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #send-button {
+            width: 60px;
+            padding: 8px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor de Spline -->
+    <spline-viewer url="https://my.spline.design/untitled-042f6c47456a00580ffea94f5d38f019/" style="width: 100%; height: 500px;"></spline-viewer>
+
+    <!-- Contenedor de chat -->
+    <div id="chat-container">
+        <div id="chat-window"></div>
+        <input id="chat-input" type="text" placeholder="Escribe aquí..." />
+        <button id="send-button">Enviar</button>
+    </div>
+
+    <script>
+        // Configuración de Hugging Face API
+        const apiToken = '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';
+        const modelUrl = 'https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-2.7B';
+
+        async function queryHuggingFace(prompt) {
+            try {
+                const response = await fetch(modelUrl, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${apiToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ inputs: prompt }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result.generated_text || "No pude procesar tu solicitud.";
+            } catch (error) {
+                console.error(error);
+                return "Ocurrió un error al procesar tu solicitud. Intenta nuevamente.";
+            }
+        }
+
+        // Función para mostrar mensajes en el chat
+        function addMessage(role, text) {
+            const chatWindow = document.getElementById('chat-window');
+            const message = document.createElement('div');
+            message.textContent = `${role}: ${text}`;
+            message.style.marginBottom = "10px";
+            message.style.color = role === "User" ? "blue" : "green";
+            chatWindow.appendChild(message);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Manejo del botón de enviar
+        document.getElementById('send-button').addEventListener('click', async () => {
+            const input = document.getElementById('chat-input');
+            const userMessage = input.value.trim();
+            if (!userMessage) return;
+
+            addMessage("User", userMessage); // Mensaje del usuario
+
+            const aiResponse = await queryHuggingFace(userMessage); // Respuesta AI
+            addMessage("Assistant", aiResponse);
+
+            input.value = ""; // Limpia el input
+        });
+    </script>
+</body>
+</html>
